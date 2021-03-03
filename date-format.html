@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CrossKnowledge - Code challenge</title>
+</head>
+<body>
+  <script>
+    // This will create elements for testing, don't change this code
+    (() => {
+      const MS_PER_MINUTE = 60000
+      const NOW = new Date()
+      let minutes = [0, 1, 30, 60, 6 * 60, 23 * 60, 24 * 60]
+      let dates = []
+
+      minutes.forEach((i) => dates.push(new Date(NOW - i * MS_PER_MINUTE)))
+
+      dates.forEach((item) => {
+        let el = document.createElement("div")
+        el.innerHTML = "Started "
+
+        let dt = document.createElement('span')
+        dt.className = 'js-date-format'
+        dt.innerHTML = item.toISOString()
+        el.appendChild(dt)
+        document.body.appendChild(el)
+      })
+
+      const elements = document.querySelectorAll('.js-date-format');
+        const cache = [];
+        elements.forEach((el, i) => {
+            const dateString = el.innerHTML.toString();
+            const STARTED = new Date(dateString);
+            update(el, STARTED, i);
+        })
+
+        function getParamsObj(value) {
+            const obj = {
+                interval: null,
+                type: 'date',
+            }
+            if (value < 60 * 1000) {
+                obj.interval = 1000;
+                obj.type = 'second';
+            }
+            if (value >= 60 * 1000 && value < 60 * 60 * 1000) {
+                obj.interval = 60 * 1000;
+                obj.type = 'minute';
+            }
+            if (value >= 60 * 60 * 1000 && value < 24 * 60 * 60 * 1000) {
+                obj.interval = 60 * 60 * 1000;
+                obj.type = 'hour';
+            }
+            return obj;
+        }
+
+        function getString(type, value) {
+            let string = value;
+            switch (type) {
+                case 'second': {
+                    string = string + ' second';
+                    break;
+                }
+                case 'minute': {
+                    string = string + ' minute';
+                    break;
+                }
+                case 'hour': {
+                    string = string + ' hour';
+                    break;
+                }
+                default: {
+                    string = null;
+                }
+            }
+            if (string !== null) {
+                if (value > 1) {
+                    string = string + 's';
+                }
+                string = string + ' ago'
+            }
+            return string;
+        }
+
+        function saveCache(el, STARTED, paramsObj, indexCache) {
+            if (paramsObj.interval !== null) {
+                cache[indexCache] = {
+                    type: paramsObj.type,
+                    interval: window.setInterval(() => {
+                        update(el, STARTED, indexCache);
+                    }, paramsObj.interval)
+                }
+            }
+        }
+
+        function update(el, STARTED, indexCache) {
+            console.log('updating ' + indexCache);
+            const NOW = new Date();
+            const diff = (NOW.getTime() - STARTED.getTime());
+            const paramsObj = getParamsObj(diff);
+            const value = parseInt(diff / paramsObj.interval, 10).toFixed(0);
+            const stringValue = getString(paramsObj.type, value);
+            if (stringValue !== null) {
+                el.innerHTML = stringValue;
+            } else {
+                el.innerHTML = STARTED.toISOString();
+
+            }
+            if (cache[indexCache]) {
+                if (cache[indexCache].type !== paramsObj.type) {
+                    window.clearInterval(cache[indexCache].interval);
+                    saveCache(el, STARTED, paramsObj, indexCache);
+                }
+            } else {
+                saveCache(el, STARTED, paramsObj, indexCache);
+            }
+        }
+    })();
+  </script>
+</body>
+</html>
