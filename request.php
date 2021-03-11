@@ -6,6 +6,8 @@ class SimpleJsonRequest
 {
     private static function makeRequest(string $method, string $url, array $parameters = null, array $data = null)
     {
+        $redis_con = new Connect();
+        $redis = $redis_con->connection();
         $opts = [
             'http' => [
                 'method'  => $method,
@@ -15,10 +17,10 @@ class SimpleJsonRequest
         ];
 
         $url .= ($parameters ? '?' . http_build_query($parameters) : '');
-        $data = self::getData($url);
+        $data = self::getData($url, $redis);
         if (empty($data)) {
             $data = file_get_contents($url, false, stream_context_create($opts));
-            self::setData($url, $data);
+            self::setData($url, $data, $redis);
         }
         return $data;
     }
@@ -48,15 +50,12 @@ class SimpleJsonRequest
         return json_decode(self::makeRequest('DELETE', $url, $parameters, $data));
     }
 
-    public static function getData($key){
-        $redis_con = new Connect();
-        $redis = $redis_con->connection();
+    public static function getData($key,$redis){
+        
         return $redis->get($key);
     }
 
-    public static function setData($key, $data){
-        $redis_con = new Connect();
-        $redis = $redis_con->connection();
+    public static function setData($key, $data, $redis){
         $redis->set($key, $data);
         $redis->expire($key, 3600);
     }
